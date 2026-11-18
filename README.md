@@ -139,7 +139,7 @@ Validation errors return `422` in one shape, including malformed JSON and missin
 I looked for platforms where a new account can get API access the same day, with no app review
 and no paid plan, and where a post gets a URL I can return.
 
-### Live platforms (enabled by default)
+### Platforms enabled by default
 
 | Platform | What gets created | Auth | Posted URL public | API docs |
 |---|---|---|---|---|
@@ -151,6 +151,10 @@ and no paid plan, and where a post gets a URL I can return.
 | DEV Community | A published article | `api-key` header | Yes | [createArticle](https://developers.forem.com/api/v1#tag/articles/operation/createArticle) |
 | Hugging Face | A community discussion on a repository I own | Bearer token | Yes | [discussions](https://huggingface.co/docs/huggingface_hub/guides/community) |
 | Discord | A channel message through a webhook | The webhook URL | No, members only | [execute webhook](https://discord.com/developers/docs/resources/webhook#execute-webhook) |
+
+Bluesky, Telegram, Telegraph, GitHub Gist and Discord have published for real (see
+[Live run](#live-run)). Mastodon, DEV and Hugging Face are written and unit-tested against their
+documented APIs, but I have not posted with them yet.
 
 Hugging Face is here because the brief asks for "supported LLM platforms" as well as websites and
 portals. Discord is the one platform where `public_access` is correctly `false`.
@@ -302,7 +306,137 @@ the suggested structure puts them. I added `api/`, `core/` and `utils/` to keep 
 
 ## Live run
 
-LIVE_RUN_SECTION
+One request, sent on 2026-11-18 (UTC), with the eight default platforms enabled. Five had
+credentials and all five published. I did not create Mastodon, DEV or Hugging Face accounts in
+time, so those three report `Not configured`, which is how the service is meant to behave.
+
+| Platform | Result | Post |
+|---|---|---|
+| Bluesky | success | [https://bsky.app/profile/elwizard.bsky.social/post/3n2kndqodxl2j](https://bsky.app/profile/elwizard.bsky.social/post/3n2kndqodxl2j) |
+| Mastodon | failed | Not configured: set MASTODON_ACCESS_TOKEN, MASTODON_BASE_URL |
+| Telegram | success | [https://t.me/elwizard_posting_demo/2](https://t.me/elwizard_posting_demo/2) |
+| Telegraph | success | [https://telegra.ph/Software-automation-and-AI-solutions-for-growing-businesses-11-18](https://telegra.ph/Software-automation-and-AI-solutions-for-growing-businesses-11-18) |
+| GitHub Gist | success | [https://gist.github.com/elwizard33/e3624b102a760d7ede13a499f628472c](https://gist.github.com/elwizard33/e3624b102a760d7ede13a499f628472c) |
+| DEV Community | failed | Not configured: set DEVTO_API_KEY |
+| Hugging Face | failed | Not configured: set HUGGINGFACE_TOKEN, HUGGINGFACE_REPO_ID |
+| Discord | success | [https://discord.com/channels/1073316539626967171/1073316540306423924/1572457403876646932](https://discord.com/channels/1073316539626967171/1073316540306423924/1572457403876646932) (members only) |
+
+Discord is a webhook into a private server, so its link only opens for server members and
+`public_access` is `false`.
+
+The unedited response is in [`docs/live-run/response.json`](docs/live-run/response.json) and the
+server's log lines for the request are in [`docs/live-run/server.log`](docs/live-run/server.log).
+
+```json
+{
+    "success": true,
+    "summary": {
+        "total": 8,
+        "succeeded": 5,
+        "failed": 3
+    },
+    "results": [
+        {
+            "platform": "Bluesky",
+            "status": "success",
+            "posted_url": "https://bsky.app/profile/elwizard.bsky.social/post/3n2kndqodxl2j",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "03:44:19",
+            "error": null
+        },
+        {
+            "platform": "Mastodon",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Not configured: set MASTODON_ACCESS_TOKEN, MASTODON_BASE_URL"
+        },
+        {
+            "platform": "Telegram",
+            "status": "success",
+            "posted_url": "https://t.me/elwizard_posting_demo/2",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "03:44:19",
+            "error": null
+        },
+        {
+            "platform": "Telegraph",
+            "status": "success",
+            "posted_url": "https://telegra.ph/Software-automation-and-AI-solutions-for-growing-businesses-11-18",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "03:44:19",
+            "error": null
+        },
+        {
+            "platform": "GitHub Gist",
+            "status": "success",
+            "posted_url": "https://gist.github.com/elwizard33/e3624b102a760d7ede13a499f628472c",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "03:44:20",
+            "error": null
+        },
+        {
+            "platform": "DEV Community",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Not configured: set DEVTO_API_KEY"
+        },
+        {
+            "platform": "Hugging Face",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Not configured: set HUGGINGFACE_TOKEN, HUGGINGFACE_REPO_ID"
+        },
+        {
+            "platform": "Discord",
+            "status": "success",
+            "posted_url": "https://discord.com/channels/1073316539626967171/1073316540306423924/1572457403876646932",
+            "public_access": false,
+            "date": "2026-11-18",
+            "time": "03:44:20",
+            "error": null
+        }
+    ]
+}
+```
+
+Server log for the same request (`LOG_FORMAT=json`). The platforms finish in the order they
+answer, which shows they run at the same time:
+
+```text
+{"platform": "Mastodon", "status": "failed", "duration_ms": 0, "error": "Not configured: set MASTODON_ACCESS_TOKEN, MASTODON_BASE_URL", "event": "platform_post", "request_id": "3c708f2b74bd", "level": "warning", "timestamp": "2026-11-18T03:44:18.415512Z"}
+{"platform": "DEV Community", "status": "failed", "duration_ms": 0, "error": "Not configured: set DEVTO_API_KEY", "event": "platform_post", "request_id": "3c708f2b74bd", "level": "warning", "timestamp": "2026-11-18T03:44:18.417516Z"}
+{"platform": "Hugging Face", "status": "failed", "duration_ms": 0, "error": "Not configured: set HUGGINGFACE_TOKEN, HUGGINGFACE_REPO_ID", "event": "platform_post", "request_id": "3c708f2b74bd", "level": "warning", "timestamp": "2026-11-18T03:44:18.417605Z"}
+{"platform": "Bluesky", "status": "success", "duration_ms": 1267, "posted_url": "https://bsky.app/profile/elwizard.bsky.social/post/3n2kndqodxl2j", "public_access": true, "event": "platform_post", "request_id": "3c708f2b74bd", "level": "info", "timestamp": "2026-11-18T03:44:19.681684Z"}
+{"platform": "Telegraph", "status": "success", "duration_ms": 1371, "posted_url": "https://telegra.ph/Software-automation-and-AI-solutions-for-growing-businesses-11-18", "public_access": true, "event": "platform_post", "request_id": "3c708f2b74bd", "level": "info", "timestamp": "2026-11-18T03:44:19.787278Z"}
+{"platform": "Telegram", "status": "success", "duration_ms": 1435, "posted_url": "https://t.me/elwizard_posting_demo/2", "public_access": true, "event": "platform_post", "request_id": "3c708f2b74bd", "level": "info", "timestamp": "2026-11-18T03:44:19.850820Z"}
+{"platform": "Discord", "status": "success", "duration_ms": 1585, "posted_url": "https://discord.com/channels/1073316539626967171/1073316540306423924/1572457403876646932", "public_access": false, "event": "platform_post", "request_id": "3c708f2b74bd", "level": "info", "timestamp": "2026-11-18T03:44:20.003025Z"}
+{"platform": "GitHub Gist", "status": "success", "duration_ms": 2535, "posted_url": "https://gist.github.com/elwizard33/e3624b102a760d7ede13a499f628472c", "public_access": true, "event": "platform_post", "request_id": "3c708f2b74bd", "level": "info", "timestamp": "2026-11-18T03:44:20.952014Z"}
+```
+
+### Screenshots
+
+| | |
+|---|---|
+| API docs | ![API docs](docs/screenshots/api-docs.png) |
+| Demo page | ![Demo page](docs/screenshots/demo-page.png) |
+| Connector catalog | ![Connector catalog](docs/screenshots/connectors.png) |
+| Bluesky | ![Bluesky](docs/screenshots/bluesky.png) |
+| Telegram | ![Telegram](docs/screenshots/telegram.png) |
+| Telegraph | ![Telegraph](docs/screenshots/telegraph.png) |
+| GitHub Gist | ![GitHub Gist](docs/screenshots/github_gist.png) |
 
 ## Tests
 

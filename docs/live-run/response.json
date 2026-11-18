@@ -1,0 +1,82 @@
+{
+    "success": true,
+    "summary": {
+        "total": 8,
+        "succeeded": 5,
+        "failed": 3
+    },
+    "results": [
+        {
+            "platform": "Bluesky",
+            "status": "success",
+            "posted_url": "https://bsky.app/profile/elwizard.bsky.social/post/3n2kndqodxl2j",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "03:44:19",
+            "error": null
+        },
+        {
+            "platform": "Mastodon",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Not configured: set MASTODON_ACCESS_TOKEN, MASTODON_BASE_URL"
+        },
+        {
+            "platform": "Telegram",
+            "status": "success",
+            "posted_url": "https://t.me/elwizard_posting_demo/2",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "03:44:19",
+            "error": null
+        },
+        {
+            "platform": "Telegraph",
+            "status": "success",
+            "posted_url": "https://telegra.ph/Software-automation-and-AI-solutions-for-growing-businesses-11-18",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "03:44:19",
+            "error": null
+        },
+        {
+            "platform": "GitHub Gist",
+            "status": "success",
+            "posted_url": "https://gist.github.com/elwizard33/e3624b102a760d7ede13a499f628472c",
+            "public_access": true,
+            "date": "2026-11-18",
+            "time": "03:44:20",
+            "error": null
+        },
+        {
+            "platform": "DEV Community",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Not configured: set DEVTO_API_KEY"
+        },
+        {
+            "platform": "Hugging Face",
+            "status": "failed",
+            "posted_url": null,
+            "public_access": false,
+            "date": null,
+            "time": null,
+            "error": "Not configured: set HUGGINGFACE_TOKEN, HUGGINGFACE_REPO_ID"
+        },
+        {
+            "platform": "Discord",
+            "status": "success",
+            "posted_url": "https://discord.com/channels/1073316539626967171/1073316540306423924/1572457403876646932",
+            "public_access": false,
+            "date": "2026-11-18",
+            "time": "03:44:20",
+            "error": null
+        }
+    ]
+}
