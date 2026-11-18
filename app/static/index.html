@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Automated Posting</title>
+  <style>
+    :root { --accent: #1a56db; --border: #d5d9e0; --muted: #5f6b7a; --ok: #17803d; --bad: #b42318; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1c2430; background: #f6f7f9; }
+    main { max-width: 920px; margin: 40px auto; padding: 0 20px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    p.lead { margin: 0 0 20px; color: var(--muted); }
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    textarea { width: 100%; min-height: 96px; padding: 10px; font: inherit; border: 1px solid var(--border); border-radius: 6px; resize: vertical; }
+    textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+    .hints { color: var(--muted); font-size: 13px; }
+    .hints .bad { color: var(--bad); font-weight: 600; }
+    button { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+    .badge.success { background: #e3f5e9; color: var(--ok); }
+    .badge.failed { background: #fde8e6; color: var(--bad); }
+    .error { color: var(--bad); }
+    #summary { margin: 0 0 12px; font-weight: 600; }
+    a { color: var(--accent); word-break: break-all; }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Automated Posting</h1>
+  <p class="lead">Publish one short message to every enabled platform. API reference: <a href="/docs">/docs</a></p>
+
+  <form class="card" id="form">
+    <label for="message"><strong>Message</strong></label>
+    <textarea id="message" placeholder="Check out our latest business platform and grow your online visibility. https://example.com"></textarea>
+    <div class="row">
+      <div class="hints">
+        <span id="count">0 / 200</span> characters &middot; links found: <span id="links">0</span> (exactly 1 required)
+      </div>
+      <button id="submit" type="submit" disabled>Publish</button>
+    </div>
+    <p class="error" id="form-error" hidden></p>
+  </form>
+
+  <section class="card" id="results" hidden>
+    <p id="summary"></p>
+    <table>
+      <thead>
+        <tr><th>Platform</th><th>Status</th><th>Posted URL</th><th>Public</th><th>Date (UTC)</th><th>Time (UTC)</th><th>Error</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+  const MAX_LENGTH = 200;
+  const LINK_PATTERN = /(?<![\w@])(?:[a-z][a-z0-9+.-]*:\/\/|www\.)\S+/gi;
+  const el = (id) => document.getElementById(id);
+  const message = el("message");
+
+  function refreshHints() {
+    const text = message.value.trim();
+    const linkCount = (text.match(LINK_PATTERN) || []).length;
+    el("count").textContent = `${text.length} / ${MAX_LENGTH}`;
+    el("count").className = text.length > MAX_LENGTH ? "bad" : "";
+    el("links").textContent = linkCount;
+    el("links").className = linkCount === 1 ? "" : "bad";
+    el("submit").disabled = text.length === 0;
+  }
+
+  function cell(row, text, className) {
+    const td = row.insertCell();
+    td.textContent = text ?? "";
+    if (className) td.className = className;
+    return td;
+  }
+
+  function showResults(data) {
+    const { total, succeeded, failed } = data.summary;
+    el("summary").textContent = `${succeeded} of ${total} platforms published, ${failed} failed`;
+    const rows = el("rows");
+    rows.replaceChildren();
+    for (const result of data.results) {
+      const row = rows.insertRow();
+      cell(row, result.platform);
+      const badge = document.createElement("span");
+      badge.className = `badge ${result.status}`;
+      badge.textContent = result.status;
+      cell(row, "").append(badge);
+      const urlCell = cell(row, "");
+      if (result.posted_url) {
+        const link = document.createElement("a");
+        link.href = result.posted_url;
+        link.textContent = result.posted_url;
+        link.target = "_blank";
+        link.rel = "noopener";
+        urlCell.append(link);
+      }
+      cell(row, result.status === "success" ? (result.public_access ? "yes" : "no") : "");
+      cell(row, result.date);
+      cell(row, result.time);
+      cell(row, result.error, "error");
+    }
+    el("results").hidden = false;
+  }
+
+  function showFormError(text) {
+    el("form-error").textContent = text;
+    el("form-error").hidden = !text;
+  }
+
+  el("form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    showFormError("");
+    el("submit").disabled = true;
+    el("submit").textContent = "Publishing...";
+    try {
+      const response = await fetch("/posting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: message.value }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        showResults(data);
+      } else {
+        const details = data.error?.details ?? [];
+        showFormError(details.map((detail) => detail.message).join(" ") || data.error?.message || "Request failed");
+      }
+    } catch (error) {
+      showFormError("Could not reach the server.");
+    } finally {
+      el("submit").textContent = "Publish";
+      refreshHints();
+    }
+  });
+
+  message.addEventListener("input", refreshHints);
+  refreshHints();
+</script>
+</body>
+</html>
